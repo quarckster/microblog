@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import render_template, flash, redirect, url_for, request, g, \
-    jsonify, current_app
+    jsonify, current_app, abort
 from flask_login import current_user, login_required
 from flask_babel import _, get_locale
 from guess_language import guess_language
@@ -45,6 +45,19 @@ def index():
     return render_template('index.html', title=_('Home'), form=form,
                            posts=posts.items, next_url=next_url,
                            prev_url=prev_url)
+
+
+@bp.route('/delete/<int:post_id>', methods=['GET', 'POST'])
+@login_required
+def delete_post(post_id):
+    post = db.session.query(Post).filter(Post.id == post_id).first()
+    if post.author.username == current_user.username:
+        db.session.delete(post)
+        db.session.commit()
+        flash(_('The post has been deleted'))
+        return redirect(url_for('main.index'))
+    else:
+        abort(403)
 
 
 @bp.route('/explore')
